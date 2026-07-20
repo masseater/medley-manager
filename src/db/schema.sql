@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS videos (
   uploader TEXT,
   published_at TEXT,
   note TEXT,
+  comment TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS parts (
   start_sec REAL,
   end_sec REAL,
   note TEXT,
+  comment TEXT,
   CHECK (song_id IS NOT NULL OR ref_video_id IS NOT NULL OR label IS NOT NULL)
 );
 

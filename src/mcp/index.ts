@@ -29,7 +29,8 @@ const partInputShape = {
   bars: z.string().optional().describe("小節数。複合表記もそのまま文字列で（例: '8+16'）"),
   start_sec: z.number().optional().describe("動画内の開始位置（秒）。任意"),
   end_sec: z.number().optional().describe("動画内の終了位置（秒）。任意"),
-  note: z.string().optional(),
+  note: z.string().optional().describe("データ由来の備考（スプシの備考欄など）"),
+  comment: z.string().nullable().optional().describe("ユーザーのメモ用コメント。null で削除"),
   audio_staff: z.array(z.string()).optional().describe("音声担当者名のリスト。名前/エイリアス完全一致で解決、無ければ新規作成"),
   video_staff: z.array(z.string()).optional().describe("映像担当者名のリスト。同上"),
 };
@@ -98,6 +99,16 @@ server.tool(
 );
 
 server.tool(
+  "remove_song_alias",
+  "曲からエイリアスを削除する",
+  { song_id: z.number(), alias: z.string() },
+  async ({ song_id, alias }) => {
+    if (!q.removeSongAlias(song_id, alias)) return err(`alias "${alias}" not found on song ${song_id}`);
+    return ok(q.getSong(song_id));
+  }
+);
+
+server.tool(
   "merge_songs",
   "重複した曲を統合する。source の曲名はエイリアスとして target に残り、パート参照も付け替えられる",
   { source_id: z.number().describe("消す側の曲ID"), target_id: z.number().describe("残す側の曲ID") },
@@ -157,6 +168,7 @@ server.tool(
     uploader: z.string().nullable().optional(),
     published_at: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
+    comment: z.string().nullable().optional().describe("ユーザーのメモ用コメント。null で削除"),
   },
   async ({ id, ...patch }) => {
     const video = q.updateVideo(id, patch);
@@ -172,7 +184,7 @@ server.tool("delete_video", "動画をパート表ごと削除する", { id: z.n
 
 server.tool(
   "set_video_parts",
-  "動画のパート表を丸ごと差し替える（スプシ取り込みはこれを使う）。配列の順番がそのままパート順になる。曲名・担当者名は完全一致で既存レコードに紐付き、無ければ自動作成される。表記ゆれが疑われる曲は先に search_songs で確認し、既存曲の表記に合わせるか add_song_alias でエイリアスを張ること",
+  "動画のパート表を丸ごと差し替える（スプシ取り込みはこれを使う）。既存パートのユーザーコメントも消えるので、登録済み動画の再取り込み時は先に get_video でコメントの有無を確認すること。配列の順番がそのままパート順になる。曲名・担当者名は完全一致で既存レコードに紐付き、無ければ自動作成される。表記ゆれが疑われる曲は先に search_songs で確認し、既存曲の表記に合わせるか add_song_alias でエイリアスを張ること",
   { video_id: z.number(), parts: z.array(z.object(partInputShape)) },
   async ({ video_id, parts }) => {
     try {

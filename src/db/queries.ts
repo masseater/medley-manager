@@ -21,9 +21,10 @@ export type Video = {
   uploader: string | null;
   published_at: string | null;
   note: string | null;
+  comment: string | null;
 };
 
-export type PartStaff = { person_id: number; name: string; role: "audio" | "video" | "other" };
+type PartStaff = { person_id: number; name: string; role: "audio" | "video" | "other" };
 
 export type Part = {
   id: number;
@@ -39,6 +40,7 @@ export type Part = {
   start_sec: number | null;
   end_sec: number | null;
   note: string | null;
+  comment: string | null;
   staff: PartStaff[];
 };
 
@@ -53,6 +55,7 @@ export type PartInput = {
   start_sec?: number;
   end_sec?: number;
   note?: string;
+  comment?: string | null;
   audio_staff?: string[];
   video_staff?: string[];
 };
@@ -169,7 +172,7 @@ export function mergeSongs(sourceId: number, targetId: number): Song | null {
 // ---------- 曲の使用状況（逆引き） ----------
 
 export type SongUsage = {
-  direct: (Video & { parts: { part_id: number; position: number; start_sec: number | null }[] })[];
+  direct: (Video & { parts: Part[] })[];
   /** 直接使用している動画（メドレー等）をさらに引用している動画 */
   indirect: (Video & { via: string[] })[];
 };
@@ -178,16 +181,14 @@ export function getSongUsage(songId: number): SongUsage {
   const db = getDb();
   const directRows = db
     .prepare(
-      `SELECT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note
+      `SELECT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note, v.comment
        FROM videos v WHERE v.id IN (SELECT DISTINCT video_id FROM parts WHERE song_id = ?)
        ORDER BY v.title`
     )
     .all(songId) as any[];
   const direct = directRows.map((v) => ({
     ...v,
-    parts: db
-      .prepare("SELECT id AS part_id, position, start_sec FROM parts WHERE video_id = ? AND song_id = ? ORDER BY position")
-      .all(v.id, songId) as any[],
+    parts: getVideoParts(v.id).filter((p) => p.song_id === songId),
   }));
 
   const directIds = new Set(direct.map((v) => v.id));
@@ -201,7 +202,7 @@ export function getSongUsage(songId: number): SongUsage {
          FROM parts p JOIN reach r ON p.ref_video_id = r.video_id
          WHERE r.depth < 10
        )
-       SELECT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note,
+       SELECT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note, v.comment,
               group_concat(DISTINCT vv.title) AS via
        FROM reach r
        JOIN videos v ON v.id = r.video_id
@@ -220,7 +221,7 @@ export function getSongUsage(songId: number): SongUsage {
 export function getVideoRow(id: number): Video | null {
   return (
     (getDb()
-      .prepare("SELECT id, title, kind, video_id, url, uploader, published_at, note FROM videos WHERE id = ?")
+      .prepare("SELECT id, title, kind, video_id, url, uploader, published_at, note, comment FROM videos WHERE id = ?")
       .get(id) as Video | undefined) ?? null
   );
 }
@@ -239,7 +240,7 @@ export function listVideos(q?: string, kind?: string): (Video & { part_count: nu
   const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
   return getDb()
     .prepare(
-      `SELECT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note,
+      `SELECT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note, v.comment,
         (SELECT COUNT(*) FROM parts p WHERE p.video_id = v.id) AS part_count
        FROM videos v ${where} ORDER BY v.title`
     )
@@ -285,10 +286,11 @@ export function updateVideo(
     uploader: string | null;
     published_at: string | null;
     note: string | null;
+    comment: string | null;
   }>
 ): Video | null {
   const db = getDb();
-  const allowed = ["title", "kind", "video_id", "url", "uploader", "published_at", "note"];
+  const allowed = ["title", "kind", "video_id", "url", "uploader", "published_at", "note", "comment"];
   const fields = Object.entries(patch).filter(([k]) => allowed.includes(k));
   if (fields.length) {
     const sets = fields.map(([k]) => `${k} = ?`).join(", ");
@@ -316,7 +318,7 @@ export function getVideoParts(videoId: number): Part[] {
     .prepare(
       `SELECT p.id, p.video_id, p.position, p.song_id, s.title AS song_title,
               p.ref_video_id, rv.title AS ref_video_title,
-              p.label, p.bpm, p.bars, p.start_sec, p.end_sec, p.note
+              p.label, p.bpm, p.bars, p.start_sec, p.end_sec, p.note, p.comment
        FROM parts p
        LEFT JOIN songs s ON s.id = p.song_id
        LEFT JOIN videos rv ON rv.id = p.ref_video_id
@@ -342,7 +344,7 @@ export function getVideoParts(videoId: number): Part[] {
 export function getReferencingVideos(videoId: number): Video[] {
   return getDb()
     .prepare(
-      `SELECT DISTINCT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note
+      `SELECT DISTINCT v.id, v.title, v.kind, v.video_id, v.url, v.uploader, v.published_at, v.note, v.comment
        FROM parts p JOIN videos v ON v.id = p.video_id WHERE p.ref_video_id = ? ORDER BY v.title`
     )
     .all(videoId) as Video[];
@@ -465,8 +467,8 @@ function insertPart(videoId: number, position: number, input: PartInput): number
   }
   const info = db
     .prepare(
-      `INSERT INTO parts (video_id, position, song_id, ref_video_id, label, bpm, bars, start_sec, end_sec, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO parts (video_id, position, song_id, ref_video_id, label, bpm, bars, start_sec, end_sec, note, comment)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       videoId,
@@ -478,7 +480,8 @@ function insertPart(videoId: number, position: number, input: PartInput): number
       input.bars ?? null,
       input.start_sec ?? null,
       input.end_sec ?? null,
-      input.note ?? null
+      input.note ?? null,
+      input.comment ?? null
     );
   const partId = Number(info.lastInsertRowid);
   const addStaff = (names: string[] | undefined, role: string) => {
@@ -522,7 +525,7 @@ export function updatePart(partId: number, patch: PartInput): Part | null {
     cols.push("ref_video_id = ?");
     vals.push(refId);
   }
-  for (const k of ["label", "bpm", "bars", "start_sec", "end_sec", "note"] as const) {
+  for (const k of ["label", "bpm", "bars", "start_sec", "end_sec", "note", "comment"] as const) {
     if (patch[k] !== undefined) {
       cols.push(`${k} = ?`);
       vals.push(patch[k]);

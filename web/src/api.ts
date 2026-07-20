@@ -18,10 +18,11 @@ export type Video = {
   uploader: string | null;
   published_at: string | null;
   note: string | null;
+  comment: string | null;
   part_count?: number;
 };
 
-export type PartStaff = { person_id: number; name: string; role: "audio" | "video" | "other" };
+type PartStaff = { person_id: number; name: string; role: "audio" | "video" | "other" };
 
 export type Part = {
   id: number;
@@ -37,12 +38,13 @@ export type Part = {
   start_sec: number | null;
   end_sec: number | null;
   note: string | null;
+  comment: string | null;
   staff: PartStaff[];
 };
 
 export type SongDetail = Song & {
   usage: {
-    direct: (Video & { parts: { part_id: number; position: number; start_sec: number | null }[] })[];
+    direct: (Video & { parts: Part[] })[];
     indirect: (Video & { via: string[] })[];
   };
 };
@@ -70,6 +72,19 @@ export async function api<T>(path: string): Promise<T> {
   const res = await fetch(`/api${path}`);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json();
+}
+
+export async function saveComment(
+  target: "videos" | "parts",
+  id: number,
+  comment: string
+): Promise<void> {
+  const res = await fetch(`/api/${target}/${id}/comment`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ comment: comment.trim() || null }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 }
 
 export const KIND_LABEL: Record<Video["kind"], string> = {

@@ -202,3 +202,83 @@ h2 {
   background: #3d3a2a;
   color: #e0d089;
 }
+
+/* 曲詳細: 使用動画の展開表示 */
+.usage-details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  margin-bottom: 8px;
+}
+.usage-details summary {
+  padding: 9px 12px;
+  cursor: pointer;
+  list-style-position: inside;
+}
+.usage-details summary::marker {
+  color: var(--muted);
+}
+.usage-details[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+.usage-body {
+  padding: 4px 12px 10px;
+}
+
+/* コメント（ユーザーメモ） */
+button {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: none;
+  border-radius: 7px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+button.ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+}
+button.ghost:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.comment-view {
+  cursor: pointer;
+  background: #2c2a1e;
+  color: #e6d9a0;
+  border-radius: 7px;
+  padding: 3px 8px;
+  display: inline-block;
+  white-space: pre-wrap;
+}
+.comment-view:hover {
+  outline: 1px solid #6b6136;
+}
+.comment-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+.comment-editor textarea {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 6px 9px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+.comment-actions {
+  display: flex;
+  gap: 6px;
+}
+.comment-add {
+  white-space: nowrap;
+}
+.comment-cell {
+  min-width: 60px;
+}

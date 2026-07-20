@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, fmtTime, KIND_LABEL, SongDetail as SD, watchUrl } from "../api";
+import { api, fmtTime, KIND_LABEL, SongDetail as SD } from "../api";
+import PartsTable from "../components/PartsTable";
 
 export default function SongDetail() {
   const { id } = useParams();
   const [song, setSong] = useState<SD | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     api<SD>(`/songs/${id}`).then(setSong).catch((e) => setError(String(e)));
   }, [id]);
+
+  useEffect(reload, [reload]);
 
   if (error) return <p className="muted">曲が見つかりません。</p>;
   if (!song) return null;
@@ -30,40 +33,32 @@ export default function SongDetail() {
         )}
       </p>
       {song.aliases.length > 0 && <p className="muted">別表記: {song.aliases.join(" / ")}</p>}
-      {song.note && <p>{song.note}</p>}
+      {song.note && <p className="muted small">{song.note}</p>}
 
       <h2>この曲を使っている動画（{song.usage.direct.length}）</h2>
       {song.usage.direct.length === 0 ? (
         <p className="muted">まだ使用動画が登録されていません。</p>
       ) : (
-        <ul className="card-list">
+        <div>
           {song.usage.direct.map((v) => (
-            <li key={v.id}>
-              <Link to={`/videos/${v.id}`}>
-                <span className={`badge kind-${v.kind}`}>{KIND_LABEL[v.kind]}</span> {v.title}
-              </Link>
-              <span className="muted small">
-                {" "}
-                {v.parts
-                  .map((p) =>
-                    p.start_sec != null ? `${fmtTime(p.start_sec)}〜 (No.${p.position})` : `No.${p.position}`
-                  )
-                  .join(", ")}
-              </span>
-              {v.parts[0]?.start_sec != null && watchUrl(v, v.parts[0].start_sec) && (
-                <a
-                  className="small"
-                  href={watchUrl(v, v.parts[0].start_sec)!}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+            <details key={v.id} className="usage-details">
+              <summary>
+                <Link to={`/videos/${v.id}`} onClick={(e) => e.stopPropagation()}>
+                  <span className={`badge kind-${v.kind}`}>{KIND_LABEL[v.kind]}</span> {v.title}
+                </Link>
+                <span className="muted small">
                   {" "}
-                  ▶ ここから再生
-                </a>
-              )}
-            </li>
+                  {v.parts
+                    .map((p) => (p.start_sec != null ? `${fmtTime(p.start_sec)}〜` : `No.${p.position}`))
+                    .join(", ")}
+                </span>
+              </summary>
+              <div className="usage-body">
+                <PartsTable video={v} parts={v.parts} onChanged={reload} />
+              </div>
+            </details>
           ))}
-        </ul>
+        </div>
       )}
 
       {song.usage.indirect.length > 0 && (
