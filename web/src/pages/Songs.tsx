@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Base, Heading, Input, Table, Td, Th } from "smarthr-ui";
 import { api, Song } from "../api";
 
 export default function Songs() {
@@ -12,34 +13,44 @@ export default function Songs() {
 
   return (
     <div>
-      <h1>曲一覧</h1>
+      <Heading type="screenTitle" tag="h1" className="page-title">
+        曲一覧
+      </Heading>
       <div className="filter-row">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="曲名・別表記・アーティストで絞り込み" />
+        <Input
+          name="filter"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="曲名・別表記・アーティストで絞り込み"
+          width="20em"
+        />
       </div>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>曲名</th>
-            <th>アーティスト</th>
-            <th>ジャンル</th>
-            <th className="num">使用動画数</th>
-          </tr>
-        </thead>
-        <tbody>
-          {songs.map((s) => (
-            <tr key={s.id}>
-              <td>
-                <Link to={`/songs/${s.id}`}>{s.title}</Link>
-                {s.aliases.length > 0 && <span className="muted small">（{s.aliases.join(" / ")}）</span>}
-              </td>
-              <td>{s.artist ?? ""}</td>
-              <td>{s.genre ?? ""}</td>
-              <td className="num">{s.use_count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {songs.length === 0 && <p className="muted">該当する曲がありません。</p>}
+      <Base padding={1} className="table-base">
+        <div className="table-wrap">
+          <Table>
+            <thead>
+              <tr>
+                <Th>曲名</Th>
+                <Th>出典・アーティスト</Th>
+                <Th>使用動画数</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {songs.map((s) => (
+                <tr key={s.id}>
+                  <Td>
+                    <Link to={`/songs/${s.id}`}>{s.title}</Link>
+                    {s.aliases.length > 0 && <span className="muted small">（{s.aliases.join(" / ")}）</span>}
+                  </Td>
+                  <Td className="muted small">{s.artist ?? s.note ?? ""}</Td>
+                  <Td className="num">{s.use_count}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+        {songs.length === 0 && <p className="muted">該当する曲がありません。</p>}
+      </Base>
     </div>
   );
 }

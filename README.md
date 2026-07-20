@@ -12,26 +12,32 @@
 ## 構成
 
 - **サーバー**: Hono + better-sqlite3（`src/server/`、`http://localhost:8765`）
-- **フロントエンド**: React + Vite（`web/`、ビルド済みをサーバーが配信）
+- **フロントエンド**: React + Vite + [smarthr-ui](https://smarthr.design/)（`web/`、ビルド済みをサーバーが配信）
+- **パッケージ管理**: pnpm（workspace: ルート + `web`）
 - **MCPサーバー**: stdio、同じ SQLite を直接読み書き（`src/mcp/`）
 - **DB**: `data/medley.db`（SQLite 1ファイル。バックアップはコピーするだけ。環境変数 `MEDLEY_DB` で変更可）
 
 ## 使い方
 
 ```powershell
-npm install
-npm --prefix web install
-npm run build   # フロントエンドのビルド
-npm start       # http://localhost:8765 で起動
+pnpm install
+pnpm build   # フロントエンドのビルド
+pnpm start   # http://localhost:8765 で起動
 ```
 
-開発時は `npm run dev`（サーバー watch + Vite dev server :5173)。
+開発時は `pnpm dev`（サーバー watch + Vite dev server :5173)。
 
 ```powershell
-npm test           # ユニットテスト（vitest、インメモリDB）
-npm run knip       # 未使用コード・依存の検出（root + web）
-npm run typecheck  # 型チェック（root + web）
+pnpm test       # ユニットテスト（vitest、インメモリDB）
+pnpm knip       # 未使用コード・依存の検出（workspace 全体）
+pnpm typecheck  # 型チェック（root + web）
 ```
+
+※ この環境では better-sqlite3 の prebuild ダウンロードキャッシュ
+（`%APPDATA%\npm-cache\_prebuilds\`）に tar.gz を置いてあるため install が通る。
+もし `pnpm install` で better-sqlite3 のビルドに失敗したら、GitHub Releases から
+`better-sqlite3-vX.Y.Z-node-v127-win32-x64.tar.gz` を落として同キャッシュに置くか、
+VS Build Tools（C++）を入れること。
 
 ## MCP
 
@@ -40,7 +46,7 @@ npm run typecheck  # 型チェック（root + web）
 どこからでも使えるようにするならユーザースコープで登録:
 
 ```powershell
-claude mcp add --scope user medley-manager -- npx tsx C:/Users/u1/medley-manager/src/mcp/index.ts
+claude mcp add --scope user medley-manager -- pnpm -C C:/Users/u1/medley-manager exec tsx src/mcp/index.ts
 ```
 
 ### ツール一覧

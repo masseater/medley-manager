@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Base, Heading, Input, Table, Td, Th } from "smarthr-ui";
 import { api, Person } from "../api";
 
 export default function People() {
@@ -12,29 +13,35 @@ export default function People() {
 
   return (
     <div>
-      <h1>担当者一覧</h1>
+      <Heading type="screenTitle" tag="h1" className="page-title">
+        担当者一覧
+      </Heading>
       <div className="filter-row">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="名前で絞り込み" />
+        <Input name="filter" value={q} onChange={(e) => setQ(e.target.value)} placeholder="名前で絞り込み" width="20em" />
       </div>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>名前</th>
-            <th className="num">担当パート数</th>
-          </tr>
-        </thead>
-        <tbody>
-          {people.map((p) => (
-            <tr key={p.id}>
-              <td>
-                <Link to={`/people/${p.id}`}>{p.name}</Link>
-              </td>
-              <td className="num">{p.part_count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {people.length === 0 && <p className="muted">該当する担当者がいません。</p>}
+      <Base padding={1} className="table-base">
+        <div className="table-wrap">
+          <Table>
+            <thead>
+              <tr>
+                <Th>名前</Th>
+                <Th>担当パート数</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {people.map((p) => (
+                <tr key={p.id}>
+                  <Td>
+                    <Link to={`/people/${p.id}`}>{p.name}</Link>
+                  </Td>
+                  <Td className="num">{p.part_count}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+        {people.length === 0 && <p className="muted">該当する担当者がいません。</p>}
+      </Base>
     </div>
   );
 }

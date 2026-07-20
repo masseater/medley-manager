@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Table, Td, Th } from "smarthr-ui";
 import { fmtTime, Part, saveComment, watchUrl } from "../api";
 import CommentEditor from "./CommentEditor";
 
@@ -30,67 +31,69 @@ export default function PartsTable({
       ));
 
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th className="num">No.</th>
-          {hasTimestamps && <th>時間</th>}
-          <th>曲 / 引用元</th>
-          {hasBpm && <th>BPM</th>}
-          {hasBars && <th className="num">小節</th>}
-          {hasAudio && <th>音声</th>}
-          {hasVideoStaff && <th>映像</th>}
-          {hasNote && <th>備考</th>}
-          <th>コメント</th>
-        </tr>
-      </thead>
-      <tbody>
-        {parts.map((p) => (
-          <tr key={p.id}>
-            <td className="num">{p.position}</td>
-            {hasTimestamps && (
-              <td>
-                {p.start_sec != null && (
-                  <a href={watchUrl(video, p.start_sec) ?? undefined} target="_blank" rel="noreferrer">
-                    {fmtTime(p.start_sec)}
-                  </a>
-                )}
-              </td>
-            )}
-            <td>
-              {p.song_id ? (
-                <Link to={`/songs/${p.song_id}`}>{p.song_title}</Link>
-              ) : p.label ? (
-                <span>{p.label}</span>
-              ) : null}
-              {p.ref_video_id && (
-                <span className="muted small">
-                  {" "}
-                  ← <Link to={`/videos/${p.ref_video_id}`}>{p.ref_video_title}</Link>
-                </span>
-              )}
-              {p.song_id && p.label && p.label !== p.song_title && (
-                <span className="muted small">（表記: {p.label}）</span>
-              )}
-            </td>
-            {hasBpm && <td>{p.bpm ?? ""}</td>}
-            {hasBars && <td className="num">{p.bars ?? ""}</td>}
-            {hasAudio && <td>{staffOf(p, "audio")}</td>}
-            {hasVideoStaff && <td>{staffOf(p, "video")}</td>}
-            {hasNote && <td className="muted small">{p.note ?? ""}</td>}
-            <td className="comment-cell">
-              <CommentEditor
-                compact
-                value={p.comment}
-                onSave={async (text) => {
-                  await saveComment("parts", p.id, text);
-                  onChanged();
-                }}
-              />
-            </td>
+    <div className="table-wrap">
+      <Table>
+        <thead>
+          <tr>
+            <Th>No.</Th>
+            {hasTimestamps && <Th>時間</Th>}
+            <Th>曲 / 引用元</Th>
+            {hasBpm && <Th>BPM</Th>}
+            {hasBars && <Th>小節</Th>}
+            {hasAudio && <Th>音声</Th>}
+            {hasVideoStaff && <Th>映像</Th>}
+            {hasNote && <Th>備考</Th>}
+            <Th>コメント</Th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {parts.map((p) => (
+            <tr key={p.id}>
+              <Td className="num">{p.position}</Td>
+              {hasTimestamps && (
+                <Td>
+                  {p.start_sec != null && (
+                    <a href={watchUrl(video, p.start_sec) ?? undefined} target="_blank" rel="noreferrer">
+                      {fmtTime(p.start_sec)}
+                    </a>
+                  )}
+                </Td>
+              )}
+              <Td>
+                {p.song_id ? (
+                  <Link to={`/songs/${p.song_id}`}>{p.song_title}</Link>
+                ) : p.label ? (
+                  <span>{p.label}</span>
+                ) : null}
+                {p.ref_video_id && (
+                  <span className="muted small">
+                    {" "}
+                    ← <Link to={`/videos/${p.ref_video_id}`}>{p.ref_video_title}</Link>
+                  </span>
+                )}
+                {p.song_id && p.label && p.label !== p.song_title && (
+                  <span className="muted small">（表記: {p.label}）</span>
+                )}
+              </Td>
+              {hasBpm && <Td>{p.bpm ?? ""}</Td>}
+              {hasBars && <Td className="num">{p.bars ?? ""}</Td>}
+              {hasAudio && <Td>{staffOf(p, "audio")}</Td>}
+              {hasVideoStaff && <Td>{staffOf(p, "video")}</Td>}
+              {hasNote && <Td className="muted small">{p.note ?? ""}</Td>}
+              <Td className="comment-cell">
+                <CommentEditor
+                  compact
+                  value={p.comment}
+                  onSave={async (text) => {
+                    await saveComment("parts", p.id, text);
+                    onChanged();
+                  }}
+                />
+              </Td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
   );
 }

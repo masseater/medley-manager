@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, KIND_LABEL, Stats, Video } from "../api";
+import { Base, Heading } from "smarthr-ui";
+import { api, Stats, Video } from "../api";
+import KindLabel from "../components/KindLabel";
 
 export default function Home() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -13,7 +15,9 @@ export default function Home() {
 
   return (
     <div>
-      <h1>ニコメド管理</h1>
+      <Heading type="screenTitle" tag="h1" className="page-title">
+        ニコメド管理
+      </Heading>
       {stats && (
         <div className="stat-row">
           <Link to="/videos" className="stat-tile">
@@ -34,22 +38,23 @@ export default function Home() {
           </Link>
         </div>
       )}
-      <h2>動画</h2>
+      <Heading type="sectionTitle" tag="h2" className="section-title">
+        動画
+      </Heading>
       {videos.length === 0 ? (
         <p className="muted">
           まだ何も登録されていません。Claude に「このスプシを取り込んで」と頼むと MCP 経由で登録されます。
         </p>
       ) : (
-        <ul className="card-list">
+        <div className="card-list">
           {videos.map((v) => (
-            <li key={v.id}>
-              <Link to={`/videos/${v.id}`}>
-                <span className={`badge kind-${v.kind}`}>{KIND_LABEL[v.kind]}</span> {v.title}
-              </Link>
+            <Base key={v.id} padding={0.75} className="card-item">
+              <KindLabel kind={v.kind} />
+              <Link to={`/videos/${v.id}`}>{v.title}</Link>
               {v.part_count != null && <span className="muted"> — {v.part_count} パート</span>}
-            </li>
+            </Base>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

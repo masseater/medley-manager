@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "medley-manager": {
-      "command": "npx",
-      "args": ["tsx", "src/mcp/index.ts"]
+      "command": "pnpm",
+      "args": ["exec", "tsx", "src/mcp/index.ts"]
     }
   }
 }

@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.15.1",
   "scripts": {
-    "dev": "concurrently -n server,web \"tsx watch src/server/index.ts\" \"npm --prefix web run dev\"",
-    "build": "npm --prefix web run build",
+    "dev": "concurrently -n server,web \"tsx watch src/server/index.ts\" \"pnpm -C web dev\"",
+    "build": "pnpm -C web build",
     "start": "tsx src/server/index.ts",
     "mcp": "tsx src/mcp/index.ts",
     "test": "vitest run",
-    "knip": "knip && npm --prefix web run knip",
-    "typecheck": "tsc --noEmit && npm --prefix web run typecheck"
+    "knip": "knip",
+    "typecheck": "tsc --noEmit && pnpm -C web typecheck"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

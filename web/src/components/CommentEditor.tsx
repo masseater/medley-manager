@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button, Cluster, Textarea } from "smarthr-ui";
 
 /** ユーザーメモ用コメントの表示 + インライン編集 */
 export default function CommentEditor({
@@ -34,20 +35,20 @@ export default function CommentEditor({
   if (editing) {
     return (
       <span className="comment-editor">
-        <textarea
+        <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={compact ? 2 : 3}
           autoFocus
         />
-        <span className="comment-actions">
-          <button onClick={save} disabled={saving}>
+        <Cluster gap={0.5}>
+          <Button variant="primary" size="s" onClick={save} disabled={saving}>
             保存
-          </button>
-          <button className="ghost" onClick={() => setEditing(false)} disabled={saving}>
+          </Button>
+          <Button variant="secondary" size="s" onClick={() => setEditing(false)} disabled={saving}>
             キャンセル
-          </button>
-        </span>
+          </Button>
+        </Cluster>
       </span>
     );
   }
@@ -60,8 +61,8 @@ export default function CommentEditor({
     );
   }
   return (
-    <button className="ghost comment-add" onClick={start}>
+    <Button variant="text" size="s" onClick={start}>
       {compact ? "💬+" : "💬 コメントを追加"}
-    </button>
+    </Button>
   );
 }

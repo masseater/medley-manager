@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, KIND_LABEL, saveComment, VideoDetail as VD, watchUrl } from "../api";
+import { Base, Heading, TextLink } from "smarthr-ui";
+import { api, saveComment, VideoDetail as VD, watchUrl } from "../api";
 import CommentEditor from "../components/CommentEditor";
+import KindLabel from "../components/KindLabel";
 import PartsTable from "../components/PartsTable";
 
 export default function VideoDetail() {
@@ -25,16 +27,16 @@ export default function VideoDetail() {
       <p className="breadcrumb">
         <Link to="/videos">動画一覧</Link>
       </p>
-      <h1>
-        <span className={`badge kind-${video.kind}`}>{KIND_LABEL[video.kind]}</span> {video.title}
-      </h1>
+      <Heading type="screenTitle" tag="h1" className="page-title">
+        <KindLabel kind={video.kind} /> {video.title}
+      </Heading>
       <p className="muted">
         {video.uploader && <>投稿者: {video.uploader} / </>}
         {video.published_at && <>投稿日: {video.published_at} / </>}
         {url && (
-          <a href={url} target="_blank" rel="noreferrer">
-            {video.video_id ?? "リンク"} ↗
-          </a>
+          <TextLink href={url} target="_blank">
+            {video.video_id ?? "リンク"}
+          </TextLink>
         )}
       </p>
       {video.note && <p className="muted small">{video.note}</p>}
@@ -48,25 +50,30 @@ export default function VideoDetail() {
         />
       </p>
 
-      <h2>パート表（{video.parts.length}）</h2>
+      <Heading type="sectionTitle" tag="h2" className="section-title">
+        パート表（{video.parts.length}）
+      </Heading>
       {video.parts.length === 0 ? (
         <p className="muted">パートが未登録です。</p>
       ) : (
-        <PartsTable video={video} parts={video.parts} onChanged={reload} />
+        <Base padding={1} className="table-base">
+          <PartsTable video={video} parts={video.parts} onChanged={reload} />
+        </Base>
       )}
 
       {video.referenced_by.length > 0 && (
         <>
-          <h2>この動画を引用している動画</h2>
-          <ul className="card-list">
+          <Heading type="sectionTitle" tag="h2" className="section-title">
+            この動画を引用している動画
+          </Heading>
+          <div className="card-list">
             {video.referenced_by.map((v) => (
-              <li key={v.id}>
-                <Link to={`/videos/${v.id}`}>
-                  <span className={`badge kind-${v.kind}`}>{KIND_LABEL[v.kind]}</span> {v.title}
-                </Link>
-              </li>
+              <Base key={v.id} padding={0.75} className="card-item">
+                <KindLabel kind={v.kind} />
+                <Link to={`/videos/${v.id}`}>{v.title}</Link>
+              </Base>
             ))}
-          </ul>
+          </div>
         </>
       )}
     </div>

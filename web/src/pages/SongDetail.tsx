@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, fmtTime, KIND_LABEL, SongDetail as SD } from "../api";
+import { Base, Heading, TextLink } from "smarthr-ui";
+import { api, fmtTime, SongDetail as SD } from "../api";
+import KindLabel from "../components/KindLabel";
 import PartsTable from "../components/PartsTable";
 
 export default function SongDetail() {
@@ -22,20 +24,24 @@ export default function SongDetail() {
       <p className="breadcrumb">
         <Link to="/songs">曲一覧</Link>
       </p>
-      <h1>{song.title}</h1>
+      <Heading type="screenTitle" tag="h1" className="page-title">
+        {song.title}
+      </Heading>
       <p className="muted">
         {song.artist && <>アーティスト: {song.artist} / </>}
         {song.genre && <>ジャンル: {song.genre} / </>}
         {song.url && (
-          <a href={song.url} target="_blank" rel="noreferrer">
-            原曲リンク ↗
-          </a>
+          <TextLink href={song.url} target="_blank">
+            原曲リンク
+          </TextLink>
         )}
       </p>
       {song.aliases.length > 0 && <p className="muted">別表記: {song.aliases.join(" / ")}</p>}
       {song.note && <p className="muted small">{song.note}</p>}
 
-      <h2>この曲を使っている動画（{song.usage.direct.length}）</h2>
+      <Heading type="sectionTitle" tag="h2" className="section-title">
+        この曲を使っている動画（{song.usage.direct.length}）
+      </Heading>
       {song.usage.direct.length === 0 ? (
         <p className="muted">まだ使用動画が登録されていません。</p>
       ) : (
@@ -44,7 +50,7 @@ export default function SongDetail() {
             <details key={v.id} className="usage-details">
               <summary>
                 <Link to={`/videos/${v.id}`} onClick={(e) => e.stopPropagation()}>
-                  <span className={`badge kind-${v.kind}`}>{KIND_LABEL[v.kind]}</span> {v.title}
+                  <KindLabel kind={v.kind} /> {v.title}
                 </Link>
                 <span className="muted small">
                   {" "}
@@ -63,17 +69,18 @@ export default function SongDetail() {
 
       {song.usage.indirect.length > 0 && (
         <>
-          <h2>間接的に使っている動画（メドレー経由）</h2>
-          <ul className="card-list">
+          <Heading type="sectionTitle" tag="h2" className="section-title">
+            間接的に使っている動画（メドレー経由）
+          </Heading>
+          <div className="card-list">
             {song.usage.indirect.map((v) => (
-              <li key={v.id}>
-                <Link to={`/videos/${v.id}`}>
-                  <span className={`badge kind-${v.kind}`}>{KIND_LABEL[v.kind]}</span> {v.title}
-                </Link>
+              <Base key={v.id} padding={0.75} className="card-item">
+                <KindLabel kind={v.kind} />
+                <Link to={`/videos/${v.id}`}>{v.title}</Link>
                 <span className="muted small"> — {v.via.join(", ")} 経由</span>
-              </li>
+              </Base>
             ))}
-          </ul>
+          </div>
         </>
       )}
     </div>
