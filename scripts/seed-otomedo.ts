@@ -28,13 +28,14 @@ const TRACKS: { title: string; source: string }[] = [
   { title: "銀河にねがいを：凱旋のテーマ", source: "ゲーム『星のカービィ スーパーデラックス』BGM" },
 ];
 
+const url = "https://www.nicovideo.jp/watch/sm36147088";
 const video =
   q.resolveVideoByTitle("sm36147088") ??
+  q.resolveVideoByTitle("【音MADメドレー】おとめっど") ??
   q.createVideo({
     title: "【音MADメドレー】おとめっど",
     kind: "medley",
-    video_id: "sm36147088",
-    url: "https://www.nicovideo.jp/watch/sm36147088",
+    url,
     uploader: "りゅん",
     note: "曲リスト出典: ニコニコ大百科 https://dic.nicovideo.jp/v/sm36147088",
   });

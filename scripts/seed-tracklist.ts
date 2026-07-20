@@ -9,17 +9,22 @@ import { readFileSync } from "node:fs";
 import * as q from "../src/db/queries.js";
 import { parseCsv } from "./lib/csv.js";
 
-const [csvPath, medleyTitle, sheetUrl] = process.argv.slice(2);
-if (!csvPath || !medleyTitle) {
-  console.error("usage: npx tsx scripts/seed-tracklist.ts <csv> <メドレータイトル> [シートURL]");
+const [csvPath, medleyTitle, videoUrl, sheetUrl] = process.argv.slice(2);
+if (!csvPath || !medleyTitle || !videoUrl) {
+  console.error("usage: npx tsx scripts/seed-tracklist.ts <csv> <メドレータイトル> <元動画URL> [曲目シートURL]");
   process.exit(1);
 }
 
 const rows = parseCsv(readFileSync(csvPath, "utf8"));
 const multiline = (s: string | undefined) => (s ?? "").trim().replace(/\s*\n\s*/g, " / ");
 
+const existing = q.resolveVideoByTitle(medleyTitle);
 const video =
-  q.resolveVideoByTitle(medleyTitle) ?? q.createVideo({ title: medleyTitle, kind: "medley" });
+  existing ?? q.createVideo({ title: medleyTitle, kind: "medley", url: videoUrl });
+// 既存レコードでも URL が未設定/プレースホルダなら埋める
+if (existing && (!existing.url || existing.url === "urn:medley-manager:unknown")) {
+  q.updateVideo(video.id, { url: videoUrl });
+}
 if (sheetUrl) q.updateVideo(video.id, { note: `曲目リスト: ${sheetUrl}` });
 
 type Entry = { song_title: string; bpm?: string; bars?: string; note?: string; source?: string };

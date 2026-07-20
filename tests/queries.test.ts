@@ -28,7 +28,7 @@ describe("曲マスタ", () => {
   it("merge_songs で参照が付け替わり、旧タイトルがエイリアスとして残る", () => {
     const a = q.createSong({ title: "テレキャスタービーボーイ" });
     const b = q.createSong({ title: "テレキャスタービーボーイ(long ver.)" });
-    const video = q.createVideo({ title: "テスト動画" });
+    const video = q.createVideo({ url: "https://example.test/テスト動画", title: "テスト動画" });
     q.setVideoParts(video.id, [{ song_id: b.id }]);
 
     const merged = q.mergeSongs(b.id, a.id)!;
@@ -42,7 +42,7 @@ describe("曲マスタ", () => {
 describe("パート登録", () => {
   it("song_title は既存曲に解決され、無ければ自動作成される", () => {
     const existing = q.createSong({ title: "ナイト・オブ・ナイツ" });
-    const video = q.createVideo({ title: "メドレーA" });
+    const video = q.createVideo({ url: "https://example.test/メドレーA", title: "メドレーA" });
     const parts = q.setVideoParts(video.id, [
       { song_title: "ナイト・オブ・ナイツ" },
       { song_title: "新規曲X", bpm: "140-180", bars: "8+16" },
@@ -54,7 +54,7 @@ describe("パート登録", () => {
   });
 
   it("BPM・小節・担当者なしでも登録できる（全項目任意）", () => {
-    const video = q.createVideo({ title: "シンプル動画" });
+    const video = q.createVideo({ url: "https://example.test/シンプル動画", title: "シンプル動画" });
     const parts = q.setVideoParts(video.id, [{ song_title: "曲だけ" }, { label: "曲名不明パート" }]);
     expect(parts).toHaveLength(2);
     expect(parts[0].bpm).toBeNull();
@@ -64,12 +64,12 @@ describe("パート登録", () => {
   });
 
   it("曲もref動画もlabelも無いパートはエラー", () => {
-    const video = q.createVideo({ title: "動画" });
+    const video = q.createVideo({ url: "https://example.test/動画", title: "動画" });
     expect(() => q.setVideoParts(video.id, [{ bpm: "150" }])).toThrow();
   });
 
   it("担当者は名前で解決・自動作成され、逆引きできる", () => {
-    const video = q.createVideo({ title: "合作B", kind: "collab" });
+    const video = q.createVideo({ url: "https://example.test/合作B", title: "合作B", kind: "collab" });
     q.setVideoParts(video.id, [
       { song_title: "曲1", audio_staff: ["たっぴ"], video_staff: ["たっぴ", "わっつー"] },
     ]);
@@ -80,7 +80,7 @@ describe("パート登録", () => {
   });
 
   it("ref_video_title は未登録ならメドレーとしてスタブ作成される", () => {
-    const video = q.createVideo({ title: "合作C", kind: "collab" });
+    const video = q.createVideo({ url: "https://example.test/合作C", title: "合作C", kind: "collab" });
     q.setVideoParts(video.id, [{ song_title: "曲1", ref_video_title: "引用元メドレーZ" }]);
     const stub = q.resolveVideoByTitle("引用元メドレーZ")!;
     expect(stub.kind).toBe("medley");
@@ -88,7 +88,7 @@ describe("パート登録", () => {
   });
 
   it("add_parts は末尾に追記する", () => {
-    const video = q.createVideo({ title: "動画D" });
+    const video = q.createVideo({ url: "https://example.test/動画D", title: "動画D" });
     q.setVideoParts(video.id, [{ song_title: "曲1" }]);
     const parts = q.addParts(video.id, [{ song_title: "曲2" }]);
     expect(parts.map((p) => [p.position, p.song_title])).toEqual([
@@ -100,9 +100,9 @@ describe("パート登録", () => {
 
 describe("逆引き", () => {
   it("直接使用と間接使用（メドレー経由の再帰）", () => {
-    const medley = q.createVideo({ title: "メドレーM", kind: "medley" });
+    const medley = q.createVideo({ url: "https://example.test/メドレーM", title: "メドレーM", kind: "medley" });
     q.setVideoParts(medley.id, [{ song_title: "共通曲" }]);
-    const collab = q.createVideo({ title: "合作G", kind: "collab" });
+    const collab = q.createVideo({ url: "https://example.test/合作G", title: "合作G", kind: "collab" });
     q.setVideoParts(collab.id, [{ song_title: "別の曲", ref_video_title: "メドレーM" }]);
 
     const song = q.resolveSongByTitle("共通曲")!;
@@ -113,7 +113,7 @@ describe("逆引き", () => {
   });
 
   it("直接使用のパート詳細（展開表示用）が含まれる", () => {
-    const video = q.createVideo({ title: "動画H" });
+    const video = q.createVideo({ url: "https://example.test/動画H", title: "動画H" });
     q.setVideoParts(video.id, [
       { song_title: "曲A", bpm: "180", start_sec: 90, audio_staff: ["ns"] },
       { song_title: "曲B" },
@@ -128,8 +128,8 @@ describe("逆引き", () => {
   });
 
   it("循環引用があっても無限ループしない", () => {
-    const a = q.createVideo({ title: "動画α" });
-    const b = q.createVideo({ title: "動画β" });
+    const a = q.createVideo({ url: "https://example.test/動画α", title: "動画α" });
+    const b = q.createVideo({ url: "https://example.test/動画β", title: "動画β" });
     q.setVideoParts(a.id, [{ song_title: "循環曲", ref_video_id: b.id }]);
     q.setVideoParts(b.id, [{ label: "αを引用", ref_video_id: a.id }]);
     const song = q.resolveSongByTitle("循環曲")!;
@@ -139,15 +139,40 @@ describe("逆引き", () => {
   });
 });
 
+describe("元動画URLの必須化", () => {
+  it("createVideo は url なしを拒否する", () => {
+    expect(() => q.createVideo({ title: "URLなし動画" } as any)).toThrow(/url is required/);
+  });
+
+  it("updateVideo は url を空文字で上書きできない", () => {
+    const v = q.createVideo({ url: "https://example.test/ok", title: "URLあり動画" });
+    expect(() => q.updateVideo(v.id, { url: "" })).toThrow();
+  });
+
+  it("URL からニコニコ・YouTube ID を自動抽出する", () => {
+    const nico = q.createVideo({ url: "https://www.nicovideo.jp/watch/sm40312425", title: "自動抽出nico" });
+    expect(nico.video_id).toBe("sm40312425");
+    const yt = q.createVideo({ url: "https://www.youtube.com/watch?v=EFv9KuB0i_M", title: "自動抽出yt" });
+    expect(yt.video_id).toBe("EFv9KuB0i_M");
+  });
+
+  it("ref_video_title で自動作成されるスタブにも url が入る（後で埋める用のプレースホルダ）", () => {
+    const v = q.createVideo({ url: "https://example.test/auto-ref", title: "自動ref元" });
+    q.setVideoParts(v.id, [{ song_title: "曲", ref_video_title: "未登録スタブ" }]);
+    const stub = q.resolveVideoByTitle("未登録スタブ")!;
+    expect(stub.url).toBe("urn:medley-manager:unknown");
+  });
+});
+
 describe("コメント（ユーザーメモ）", () => {
   it("動画コメントの設定と削除", () => {
-    const video = q.createVideo({ title: "動画I" });
+    const video = q.createVideo({ url: "https://example.test/動画I", title: "動画I" });
     expect(q.updateVideo(video.id, { comment: "神メドレー" })!.comment).toBe("神メドレー");
     expect(q.updateVideo(video.id, { comment: null })!.comment).toBeNull();
   });
 
   it("パートコメントの設定と削除", () => {
-    const video = q.createVideo({ title: "動画J" });
+    const video = q.createVideo({ url: "https://example.test/動画J", title: "動画J" });
     const [part] = q.setVideoParts(video.id, [{ song_title: "曲C" }]);
     expect(q.updatePart(part.id, { comment: "ここの繋ぎが好き" })!.comment).toBe("ここの繋ぎが好き");
     expect(q.updatePart(part.id, { comment: null })!.comment).toBeNull();
@@ -156,9 +181,9 @@ describe("コメント（ユーザーメモ）", () => {
 
 describe("削除・統合", () => {
   it("動画削除でパートも消え、他動画からの引用参照は安全に外れる", () => {
-    const medley = q.createVideo({ title: "メドレーN", kind: "medley" });
+    const medley = q.createVideo({ url: "https://example.test/メドレーN", title: "メドレーN", kind: "medley" });
     q.setVideoParts(medley.id, [{ song_title: "曲D" }]);
-    const collab = q.createVideo({ title: "合作O", kind: "collab" });
+    const collab = q.createVideo({ url: "https://example.test/合作O", title: "合作O", kind: "collab" });
     q.setVideoParts(collab.id, [
       { song_title: "曲E", ref_video_id: medley.id },
       { label: "ref のみのパート", ref_video_id: medley.id },
@@ -171,7 +196,7 @@ describe("削除・統合", () => {
   });
 
   it("merge_people で担当が付け替わる", () => {
-    const video = q.createVideo({ title: "動画P" });
+    const video = q.createVideo({ url: "https://example.test/動画P", title: "動画P" });
     q.setVideoParts(video.id, [{ song_title: "曲F", audio_staff: ["KP"], video_staff: [" KP "] }]);
     q.addParts(video.id, [{ song_title: "曲G", audio_staff: ["けーぴー"] }]);
     const kp = q.resolvePersonByName("KP", false)!;

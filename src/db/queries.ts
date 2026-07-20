@@ -257,23 +257,33 @@ export function createVideo(input: {
   title: string;
   kind?: Video["kind"];
   video_id?: string;
-  url?: string;
+  url: string;
   uploader?: string;
   published_at?: string;
   note?: string;
 }): Video {
+  const url = input.url?.trim();
+  if (!url) throw new Error("url is required (元動画のリンクは必須)");
   const info = getDb()
     .prepare("INSERT INTO videos (title, kind, video_id, url, uploader, published_at, note) VALUES (?, ?, ?, ?, ?, ?, ?)")
     .run(
       input.title.trim(),
       input.kind ?? "medley",
-      input.video_id ?? null,
-      input.url ?? null,
+      input.video_id ?? deriveVideoId(url),
+      url,
       input.uploader ?? null,
       input.published_at ?? null,
       input.note ?? null
     );
   return getVideoRow(Number(info.lastInsertRowid))!;
+}
+
+/** URL からニコニコの sm/nm/so ID または YouTube ID を推測する */
+function deriveVideoId(url: string): string | null {
+  const nico = url.match(/nicovideo\.jp\/watch\/((?:sm|nm|so)\d+)/);
+  if (nico) return nico[1];
+  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]{11})/);
+  return yt ? yt[1] : null;
 }
 
 export function updateVideo(
@@ -282,14 +292,23 @@ export function updateVideo(
     title: string;
     kind: Video["kind"];
     video_id: string | null;
-    url: string | null;
+    url: string;
     uploader: string | null;
     published_at: string | null;
     note: string | null;
     comment: string | null;
   }>
 ): Video | null {
+  if ("url" in patch && !patch.url?.trim()) throw new Error("url は空にできません（元動画のリンクは必須）");
   const db = getDb();
+  // URL を変えるときに video_id が明示指定されておらず、既存も空なら URL から自動抽出
+  if (patch.url && patch.video_id === undefined) {
+    const current = getVideoRow(id);
+    if (current && !current.video_id) {
+      const derived = deriveVideoId(patch.url);
+      if (derived) patch = { ...patch, video_id: derived };
+    }
+  }
   const allowed = ["title", "kind", "video_id", "url", "uploader", "published_at", "note", "comment"];
   const fields = Object.entries(patch).filter(([k]) => allowed.includes(k));
   if (fields.length) {
@@ -458,9 +477,18 @@ function insertPart(videoId: number, position: number, input: PartInput): number
   let refVideoId = input.ref_video_id ?? null;
   if (!refVideoId && input.ref_video_title) {
     const resolved = resolveVideoByTitle(input.ref_video_title);
-    refVideoId = resolved
-      ? resolved.id
-      : createVideo({ title: input.ref_video_title, kind: "medley", note: "パート登録時に自動作成" }).id;
+    if (resolved) {
+      refVideoId = resolved.id;
+    } else {
+      // 引用先の動画が未登録の場合はスタブを作る。URL は必須だが不明な時点なので
+      // 「後で埋める」プレースホルダを入れておく（動画一覧で見つけて更新できる）
+      refVideoId = createVideo({
+        title: input.ref_video_title,
+        kind: "medley",
+        url: "urn:medley-manager:unknown",
+        note: "パート登録時に自動作成（元動画URL未確認）",
+      }).id;
+    }
   }
   if (!songId && !refVideoId && !input.label) {
     throw new Error(`part ${position}: song / ref_video / label のいずれかが必要です`);
@@ -520,7 +548,14 @@ export function updatePart(partId: number, patch: PartInput): Part | null {
     let refId = patch.ref_video_id ?? null;
     if (!refId && patch.ref_video_title) {
       const resolved = resolveVideoByTitle(patch.ref_video_title);
-      refId = resolved ? resolved.id : createVideo({ title: patch.ref_video_title, kind: "medley" }).id;
+      refId = resolved
+        ? resolved.id
+        : createVideo({
+            title: patch.ref_video_title,
+            kind: "medley",
+            url: "urn:medley-manager:unknown",
+            note: "パート更新時に自動作成（元動画URL未確認）",
+          }).id;
     }
     cols.push("ref_video_id = ?");
     vals.push(refId);

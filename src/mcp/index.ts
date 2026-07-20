@@ -143,17 +143,23 @@ server.tool(
 
 server.tool(
   "create_video",
-  "動画（メドレー・合作・単品）を新規登録する。パート表は set_video_parts で登録する",
+  "動画（メドレー・合作・単品）を新規登録する。パート表は set_video_parts で登録する。元動画URLは必須",
   {
     title: z.string(),
     kind: z.enum(["medley", "collab", "single", "other"]).optional().describe("medley=メドレー, collab=合作, single=単品, other=その他。省略時 medley"),
-    video_id: z.string().optional().describe("ニコニコ動画ID（sm12345678）やYouTube ID"),
-    url: z.string().optional(),
+    url: z.string().min(1).describe("元動画のリンク（必須）。ニコニコ https://www.nicovideo.jp/watch/sm12345678 または YouTube https://www.youtube.com/watch?v=XXX の完全URL"),
+    video_id: z.string().optional().describe("ニコニコ動画ID（sm12345678）やYouTube ID。省略時は URL から自動抽出"),
     uploader: z.string().optional().describe("投稿者名"),
     published_at: z.string().optional().describe("投稿日（YYYY-MM-DD）"),
     note: z.string().optional(),
   },
-  async (input) => ok(q.createVideo(input))
+  async (input) => {
+    try {
+      return ok(q.createVideo(input));
+    } catch (e) {
+      return err(String(e));
+    }
+  }
 );
 
 server.tool(
@@ -164,15 +170,19 @@ server.tool(
     title: z.string().optional(),
     kind: z.enum(["medley", "collab", "single", "other"]).optional(),
     video_id: z.string().nullable().optional(),
-    url: z.string().nullable().optional(),
+    url: z.string().min(1).optional().describe("元動画のリンク（必須項目のため空文字/null にはできない）"),
     uploader: z.string().nullable().optional(),
     published_at: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
     comment: z.string().nullable().optional().describe("ユーザーのメモ用コメント。null で削除"),
   },
   async ({ id, ...patch }) => {
-    const video = q.updateVideo(id, patch);
-    return video ? ok(video) : err(`video ${id} not found`);
+    try {
+      const video = q.updateVideo(id, patch);
+      return video ? ok(video) : err(`video ${id} not found`);
+    } catch (e) {
+      return err(String(e));
+    }
   }
 );
 

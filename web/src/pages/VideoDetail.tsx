@@ -30,14 +30,19 @@ export default function VideoDetail() {
       <Heading type="screenTitle" tag="h1" className="page-title">
         <KindLabel kind={video.kind} /> {video.title}
       </Heading>
-      <p className="muted">
-        {video.uploader && <>投稿者: {video.uploader} / </>}
-        {video.published_at && <>投稿日: {video.published_at} / </>}
-        {url && (
-          <TextLink href={url} target="_blank">
-            {video.video_id ?? "リンク"}
+      <p className="video-link">
+        {url && url !== "urn:medley-manager:unknown" ? (
+          <TextLink href={url} target="_blank" prefix="🎬">
+            {video.video_id ?? "元動画を開く"}
           </TextLink>
+        ) : (
+          <span className="muted small">⚠ 元動画URL未登録</span>
         )}
+      </p>
+      <p className="muted">
+        {video.uploader && <>投稿者: {video.uploader}</>}
+        {video.uploader && video.published_at && " / "}
+        {video.published_at && <>投稿日: {video.published_at}</>}
       </p>
       {video.note && <p className="muted small">{video.note}</p>}
       <p>

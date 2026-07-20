@@ -29,11 +29,19 @@ const splitStaff = (s: string | undefined) =>
 const splitSongs = (label: string) =>
   [...new Set(label.split(/→|↔|&|\n/).map((x) => x.trim()).filter(Boolean))];
 
-const video = q.resolveVideoByTitle("にょろにょろ合作3") ?? q.createVideo({
-  title: "にょろにょろ合作3",
-  kind: "collab",
-  note: "grill-me スプシから取り込み",
-});
+const url = "https://www.youtube.com/watch?v=EFv9KuB0i_M";
+const existing = q.resolveVideoByTitle("にょろにょろ合作3");
+const video =
+  existing ??
+  q.createVideo({
+    title: "にょろにょろ合作3",
+    kind: "collab",
+    url,
+    note: "grill-me スプシから取り込み",
+  });
+if (existing && (!existing.url || existing.url === "urn:medley-manager:unknown")) {
+  q.updateVideo(video.id, { url });
+}
 
 let currentMedley: string | undefined;
 const parts: q.PartInput[] = [];

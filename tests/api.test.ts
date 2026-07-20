@@ -14,7 +14,7 @@ let songId = 0;
 let partId = 0;
 
 beforeAll(() => {
-  const video = q.createVideo({ title: "APIテスト合作", kind: "collab", video_id: "sm99999999" });
+  const video = q.createVideo({ url: "https://example.test/APIテスト合作", title: "APIテスト合作", kind: "collab", video_id: "sm99999999" });
   videoId = video.id;
   const parts = q.setVideoParts(video.id, [
     { song_title: "API曲1", bpm: "180", audio_staff: ["てすたー"], ref_video_title: "APIメドレー" },
